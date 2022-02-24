@@ -87,7 +87,7 @@ export default {
     },
   },
   mounted() {
-    const ws = new WebSocket(`ws://localhost:5000/dice/${this.id}/ws`);
+    const ws = new WebSocket(`ws://${window.location.hostname}/dice/${this.id}/ws`);
     this.ws = ws;
     this.msg = "hellooo";
     var self = this;
