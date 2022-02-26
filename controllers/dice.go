@@ -100,32 +100,23 @@ func (h DiceController) handleMessage(s *melody.Session, msg []byte) {
 	}
 }
 
-func (_ DiceController) New() DiceController {
-	h := DiceController{}
-	m := melody.New()
-	h.m = m
-	h.sessions = make(map[*melody.Session][5]int)
-	m.HandleConnect(h.handleConnect)
-	m.HandleDisconnect(h.handleDisconnect)
-	m.HandleMessage(h.handleMessage)
-	return h
-}
-
-func (h DiceRouter) New() DiceRouter {
-	h.m = make(map[string]*DiceController)
-	return h
-}
-func (h DiceRouter) WebSocket(c *gin.Context) {
-	if val, ok := h.m[c.Param("name")]; ok {
-		log.Print(c.Param("name"))
-		val.m.HandleRequest(c.Writer, c.Request)
-	} else {
-		dice := new(DiceController).New()
-		h.m[c.Param("name")] = &dice
-		dice.m.HandleRequest(c.Writer, c.Request)
-	}
-}
-
-func (h DiceController) WebSocket(c *gin.Context) {
+func (h DiceController) HandleRequest(c *gin.Context) {
 	h.m.HandleRequest(c.Writer, c.Request)
+}
+
+func (h DiceController) Close() {
+	h.m.Close()
+}
+
+func NewDiceController() func() RoomControllerInterface {
+	return func() RoomControllerInterface {
+		h := DiceController{}
+		m := melody.New()
+		h.m = m
+		h.sessions = make(map[*melody.Session][5]int)
+		m.HandleConnect(h.handleConnect)
+		m.HandleDisconnect(h.handleDisconnect)
+		m.HandleMessage(h.handleMessage)
+		return h
+	}
 }

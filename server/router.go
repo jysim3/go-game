@@ -23,8 +23,14 @@ func NewRouter() *gin.Engine {
 	})
 	r.Static("/static", "./www/build/static")
 
-	dice := new(controllers.DiceRouter).New()
-	r.GET("/dice/:name/ws", dice.WebSocket)
+	other := controllers.NewWebSocketController(controllers.NewDiceController())
+	r.GET("/dice/:name/ws", other.WebSocket)
+
+	rock := controllers.NewWebSocketController(controllers.NewRockController())
+	r.GET("/rock/:name/ws", rock.WebSocket)
+
+	r.POST("/rock/:name/reset", rock.Reset)
+	// r.GET("/rock/:name/close", rock.Close)
 
 	return r
 }
