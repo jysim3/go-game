@@ -21,8 +21,17 @@ func (h Rock) handleDisconnect(s *melody.Session) {
 func (h Rock) handleConnect(s *melody.Session) {
 	if len(h.sessions) >= 2 {
 		s.CloseWithMsg(melody.FormatCloseMessage(1000, "SERVER_FULL"))
-	} else {
-		h.sessions[s] = ""
+		return
+	}
+	h.sessions[s] = ""
+	if len(h.sessions) == 2 {
+		data := models.Command{
+			"start",
+			"",
+		}
+		for session, _ := range h.sessions {
+			session.Write(data.Json())
+		}
 	}
 }
 

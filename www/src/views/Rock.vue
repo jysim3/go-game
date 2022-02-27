@@ -1,7 +1,7 @@
 <template>
   <div>
     <v-container>
-      <v-dialog v-model="error" persistent>
+      <v-dialog v-model="error" persistent width="500">
         <v-card>
           <v-card-title class="text-h5 grey lighten-2">
             Room is full or server error. Try resetting room below
@@ -29,7 +29,12 @@
             height="200"
             class="d-flex align-center justify-center pa-4 mx-auto"
           >
-            <h1 class="text-h1" v-if="opponent === ''">?</h1>
+            <v-progress-circular
+              indeterminate
+              v-if="status === ''"
+              color="primary"
+            ></v-progress-circular>
+            <h1 class="text-h1" v-else-if="opponent === ''">?</h1>
             <v-img v-else :src="require(`@/assets/rock/${opponent}.png`)" />
           </v-card>
         </v-col>
@@ -43,7 +48,7 @@
         <v-col cols="4" v-for="move in moves" :key="move">
           <v-hover v-slot="{ hover }">
             <v-card
-              :disabled="status !== '' && move !== player"
+              :disabled="status !== 'start' && move !== player"
               :color="move === player ? playerColor : 'white'"
             >
               <v-img
@@ -122,16 +127,20 @@ export default {
   },
   methods: {
     setUpWebSocket() {
-      const ws = new WebSocket(`ws://${window.location.host}/rock/${this.id}/ws`);
+      //const host = window.location.host;
+      const host = 'localhost:8081';
+      const ws = new WebSocket(
+        `ws://${host}/rock/${this.id}/ws`
+      );
       this.ws = ws;
       var self = this;
       ws.onerror = function (event) {
         self.status = "error";
         self.error = true;
-        console.log(event)
+        console.log(event);
       };
       ws.onclose = function (event) {
-        console.log(event)
+        console.log(event);
         self.error = true;
       };
       ws.onmessage = function (msg) {
@@ -150,14 +159,14 @@ export default {
         } else if (j.command === "start") {
           self.player = "";
           self.opponent = "";
-          self.status = "";
+          self.status = "start";
         }
       };
     },
     start() {
       this.player = "";
       this.opponent = "";
-      this.status = "";
+      this.status = "start";
       this.ws.send(
         JSON.stringify({
           command: "start",
