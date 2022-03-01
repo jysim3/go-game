@@ -127,8 +127,8 @@ export default {
   },
   methods: {
     setUpWebSocket() {
-      //const host = window.location.host;
-      const host = 'localhost:8081';
+      const host = window.location.host;
+      // const host = 'localhost:8081';
       const ws = new WebSocket(
         `ws://${host}/rock/${this.id}/ws`
       );
