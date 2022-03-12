@@ -28,9 +28,11 @@ func NewRouter() *gin.Engine {
 
 	rock := controllers.NewWebSocketController(controllers.NewRockController())
 	r.GET("/rock/:name/ws", rock.WebSocket)
-
 	r.POST("/rock/:name/reset", rock.Reset)
 	// r.GET("/rock/:name/close", rock.Close)
 
+	joker := controllers.NewWebSocketController(controllers.NewJokerController())
+	r.GET("/joker/:name/ws", joker.WebSocket)
+	r.POST("/joker/:name/reset", joker.Reset)
 	return r
 }

@@ -44,7 +44,8 @@ func (h WebSocketController) Reset(c *gin.Context) {
 
 func (h WebSocketController) WebSocket(c *gin.Context) {
 	if val, ok := h.m[c.Param("name")]; ok {
-		log.Print(c.Param("name"))
+		log.Printf("New request for existing room %s", c.Param("name"))
+		log.Print(val.(*Joker).state)
 		val.HandleRequest(c)
 	} else {
 		dice := h.n()
