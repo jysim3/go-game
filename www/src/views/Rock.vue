@@ -127,8 +127,7 @@ export default {
   },
   methods: {
     setUpWebSocket() {
-      const host = window.location.host;
-      // const host = 'localhost:8081';
+      const host = process.env.VUE_APP_API_HOST;
       const ws = new WebSocket(
         `ws://${host}/rock/${this.id}/ws`
       );

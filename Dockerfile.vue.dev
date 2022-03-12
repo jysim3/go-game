@@ -1,0 +1,7 @@
+FROM node:17-alpine AS front
+WORKDIR /www
+COPY www/package*.json .
+RUN npm install
+COPY www/ .
+CMD npm run serve
+
