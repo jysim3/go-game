@@ -3,7 +3,9 @@
     <v-container>
       <v-row justify="center" class="text-center">
         <v-col cols="auto">
-          <h1 class="text-h1">Dice - room <code>{{ id }}</code></h1>
+          <h1 class="text-h1">
+            Dice - room <code>{{ id }}</code>
+          </h1>
         </v-col>
       </v-row>
       <v-row
@@ -12,7 +14,11 @@
         :key="index"
       >
         <v-col cols="2" v-for="(die, index) in dice" :key="index">
-          <v-img :src="require(`@/assets/dice/${die}.png`)" class="rounded-lg" max-width="150" />
+          <v-img
+            :src="require(`@/assets/dice/${die}.png`)"
+            class="rounded-lg"
+            max-width="150"
+          />
         </v-col>
       </v-row>
       <v-row justify="center">
@@ -87,7 +93,8 @@ export default {
     },
   },
   mounted() {
-    const ws = new WebSocket(`ws://${window.location.host}/dice/${this.id}/ws`);
+    const host = process.env.VUE_APP_API_HOST || window.location.host;
+    const ws = new WebSocket(`ws://${host}/dice/${this.id}/ws`);
     this.ws = ws;
     this.msg = "hellooo";
     var self = this;

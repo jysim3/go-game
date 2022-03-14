@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"jysim/game/controllers/gameState"
 	"jysim/game/models"
+	"log"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -64,6 +65,7 @@ func (h *Joker) handleMessage(s *melody.Session, msg []byte) {
 	}
 	if command.Code == "send" {
 		err := h.state.Move(h.sessions[s], command.Data.(string))
+		log.Print(err)
 		h.updatePlayers()
 	} else if command.Code == "start" {
 		if h.state.GetGameStatus() != -1 {

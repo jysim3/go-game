@@ -219,7 +219,7 @@ export default {
   },
   methods: {
     setUpWebSocket() {
-      const host = process.env.VUE_APP_API_HOST;
+      const host = process.env.VUE_APP_API_HOST || window.location.host;
       // const host = 'localhost:8081';
       const ws = new WebSocket(`ws://${host}/joker/${this.id}/ws`);
       this.ws = ws;
@@ -250,7 +250,7 @@ export default {
     },
     reset() {
       this.error = false;
-      const host = process.env.VUE_APP_API_HOST;
+      const host = process.env.VUE_APP_API_HOST || window.location.host;
       fetch(`http://${host}/joker/${this.id}/reset`, {
         method: "POST",
       })
