@@ -34,9 +34,9 @@ func (j JokerState) GetGameStateForPlayer(player_id int) State {
 	opponent, player := 0, 0
 	for _, move := range j.history {
 		if player_id == j.getPlayerFromMove(move) {
-			opponent += 1
-		} else {
 			player += 1
+		} else {
+			opponent += 1
 		}
 	}
 	ret := map[string]interface{}{}

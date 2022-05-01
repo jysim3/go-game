@@ -37,14 +37,14 @@
         </v-col>
 
         <v-col cols="4" v-else>
-          <v-card>
+          <v-card v-if="(4 - opponentCount) > 0">
             <v-img
               class="otherCards-cards"
               eager
               :src="require(`@/assets/cards/1B.svg`)"
-              v-for="(move, index) in opponentMoves"
+              v-for="(move, index) in (4-opponentCount)"
               :key="index"
-              :style="`top: -${(moves.others.length - index - 1) * 5}px`"
+              :style="`bottom: ${(3-opponentCount-(index)) * 5}px`"
             />
           </v-card> </v-col
         ><v-col cols="4">
@@ -54,7 +54,12 @@
         </v-col>
       </v-row>
       <v-row justify="center">
-        <v-col cols="1" v-for="(move, index) in historyFormatted" :key="index">
+        <v-col
+          cols="1"
+          class="pa-0"
+          v-for="(move, index) in historyFormatted"
+          :key="index"
+        >
           <v-card>
             <v-img :src="require(`@/assets/cards/${move[0]}.svg`)" />
           </v-card>
@@ -62,10 +67,7 @@
             <v-img :src="require(`@/assets/cards/${move[1]}.svg`)" />
           </v-card>
         </v-col>
-        <v-col cols="auto">
-          <h2 class="text-h2">VS</h2>
-        </v-col>
-        <v-col cols="5">
+        <v-col cols="12" md="7">
           <v-alert
             v-if="status === 'won' || status === 'lost'"
             :type="status === 'won' ? 'success' : 'error'"
@@ -74,7 +76,7 @@
             <v-row align="center">
               <v-col class="grow"> You {{ status }} </v-col>
               <v-col class="shrink">
-                <v-btn  @click="start">Start again</v-btn>
+                <v-btn @click="start">Start again</v-btn>
               </v-col>
             </v-row>
           </v-alert>
@@ -87,7 +89,7 @@
               <div style="position: relative">
                 <v-img
                   class="otherCards-cards"
-                  @click="send"
+                  @click="send('N')"
                   :src="require(`@/assets/cards/${move}.svg`)"
                   v-for="(move, index) in moves.others"
                   :key="move"
@@ -105,7 +107,7 @@
           <v-hover v-slot="{ hover }">
             <v-card :disabled="status !== 'ready'">
               <v-img
-                @click="send"
+                @click="send('x')"
                 :src="require(`@/assets/cards/${moves.key}.svg`)"
               />
               <v-fade-transition>
@@ -130,9 +132,12 @@ function moves(isJoker, n = 4) {
   const ret = {
     key: special + suit,
     label: isJoker ? "Joker" : "King",
-    others: Array(n)
-      .fill(0)
-      .map((_, index) => index + 2 + suit),
+    others:
+      n > 0
+        ? Array(n)
+            .fill(0)
+            .map((_, index) => 5 - index + suit)
+        : [],
   };
   return ret;
 }
@@ -149,8 +154,8 @@ export default {
     return {
       error: false,
       player: "",
-      player_past_moves: 0,
-      opponent_past_moves: 0,
+      playerCount: 0,
+      opponentCount: 0,
       history: [],
       opponent: "",
       status: "",
@@ -190,9 +195,6 @@ export default {
     moves() {
       return moves(this.player === "joker", 4 - (this.playerCount || 0));
     },
-    opponentMoves() {
-      return Array(4 - (this.opponentCount || 0)).fill("1B");
-    },
     opponentColor() {
       return (
         {
@@ -219,8 +221,12 @@ export default {
   },
   methods: {
     setUpWebSocket() {
-      const host = process.env.VUE_APP_API_HOST || window.location.host;
+      // const host = process.env.VUE_APP_API_HOST || window.location.host;
       // const host = 'localhost:8081';
+      const host =
+        process.env.VUE_APP_API_HOST ||
+        "localhost:8081" ||
+        window.location.host;
       const ws = new WebSocket(`ws://${host}/joker/${this.id}/ws`);
       this.ws = ws;
       var self = this;
@@ -241,6 +247,7 @@ export default {
         self.playerCount = j.data.player_past_moves;
         self.opponentCount = j.data.opponent_past_moves;
         self.history = j.data.history;
+        console.log(self)
       };
     },
     reconnect() {
@@ -270,14 +277,16 @@ export default {
       );
     },
     send(move) {
-      this.player = move;
-      this.status = "sent";
-      this.ws.send(
-        JSON.stringify({
-          command: "send",
-          data: move,
-        })
-      );
+      if (move) {
+        this.player = move;
+        this.status = "sent";
+        this.ws.send(
+          JSON.stringify({
+            command: "send",
+            data: move,
+          })
+        );
+      }
     },
   },
 };
