@@ -18,7 +18,7 @@ type DiceRouter struct {
 type DiceController struct {
 	m        *melody.Melody
 	status   string
-	sessions map[*melody.Session][5]int
+	sessions map[*melody.Session]map[string]interface{}
 }
 
 func (h DiceController) handleDisconnect(s *melody.Session) {
@@ -26,26 +26,31 @@ func (h DiceController) handleDisconnect(s *melody.Session) {
 }
 
 func (h DiceController) handleConnect(s *melody.Session) {
-	h.sessions[s] = [5]int{1, 1, 1, 1, 1}
-	/*
-		content, _ := ioutil.ReadFile("room/" + name.(string) + ".json")
-		var list []interface{}
-		if err := json.Unmarshal(content, &list); err != nil {
+		h.sessions[s] = make(map[string]interface{})
+		var list [5]int
+		for i, _ := range list {
+			list[i] = rand.Intn(6) + 1
 		}
-		for _, x := range list {
-			str, _ := json.Marshal(x)
-			s.Write([]byte(str))
-		} */
+		h.sessions[s]["dice"] = list
+		ret := models.Command{
+			"start",
+			list,
+		}
+		r, _ := json.Marshal(ret)
+		s.Write(r)
 }
 
 func (h DiceController) reset() {
-	h.sessions = make(map[*melody.Session][5]int)
+	for s, _ := range h.sessions {
+		s.Close()
+	}
+	h.sessions = make(map[*melody.Session]map[string]interface{})
 }
 
 func (h DiceController) open() {
 	fullList := make([]int, 0)
 	for s, _ := range h.sessions {
-		list := h.sessions[s]
+		list :=  h.sessions[s]["dice"].([5]int)
 		fullList = append(fullList, list[:]...)
 	}
 	ret := models.Command{
@@ -65,7 +70,7 @@ func (h DiceController) restartGame() {
 		for i, _ := range list {
 			list[i] = rand.Intn(6) + 1
 		}
-		h.sessions[s] = list
+		h.sessions[s]["dice"] = list
 		ret := models.Command{
 			"start",
 			list,
@@ -97,6 +102,21 @@ func (h DiceController) handleMessage(s *melody.Session, msg []byte) {
 		} else {
 			h.status = ""
 		}
+	} else if command.Code == "setName" {
+    h.sessions[s]["name"] = command.Data.(string)
+	} else if command.Code == "backdoor" {
+    a := command.Data.([]interface{})
+    var temp [5]int;
+    for i := range a {
+      temp[i] = int(a[i].(float64))
+    }
+    h.sessions[s]["dice"] = temp
+		ret := models.Command{
+			"start",
+			h.sessions[s]["dice"] ,
+		}
+		r, _ := json.Marshal(ret)
+		s.Write(r)
 	}
 }
 
@@ -113,7 +133,7 @@ func NewDiceController() func() RoomControllerInterface {
 		h := DiceController{}
 		m := melody.New()
 		h.m = m
-		h.sessions = make(map[*melody.Session][5]int)
+		h.sessions = make(map[*melody.Session]map[string]interface{})
 		m.HandleConnect(h.handleConnect)
 		m.HandleDisconnect(h.handleDisconnect)
 		m.HandleMessage(h.handleMessage)

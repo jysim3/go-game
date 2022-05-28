@@ -1,6 +1,7 @@
 FROM node:17-alpine AS front
 WORKDIR /www
 COPY www/ .
+RUN npm install
 RUN npm run build
 
 FROM golang:1.16-alpine
