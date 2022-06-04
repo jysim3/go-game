@@ -8,6 +8,11 @@
           </h1>
         </v-col>
       </v-row>
+      <v-row justify="center">
+        <v-col cols="auto">
+          Number of players: {{ n_players === null ? 'Not Connected' : n_players }}
+        </v-col>
+      </v-row>
       <v-row v-if="dice.length > 5">
         <v-col cols="12" class="d-flex justify-center">
           <v-switch v-model="withOnes" label="With Joker(1)" />
@@ -158,6 +163,7 @@ export default {
       dialog: false,
       withOnes: true,
       highlight: false,
+      n_players: null,
 
       startup: true,
       rerollTimeout: null,
@@ -206,6 +212,9 @@ return this.dice.length > 5 || this.status === this.STATUS.STARTUP ||  this.dice
       }
       if (j.command == "start") {
         self.dice = j.data;
+      }
+      if (j.command == "players") {
+        self.n_players = j.data;
       }
     };
     ws.onclose = function () {

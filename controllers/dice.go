@@ -23,6 +23,14 @@ type DiceController struct {
 
 func (h DiceController) handleDisconnect(s *melody.Session) {
 	delete(h.sessions, s)
+  ret := models.Command{
+    "players",
+    len(h.sessions),
+  }
+	for s, _ := range h.sessions {
+		r, _ := json.Marshal(ret)
+		s.Write(r)
+	}
 }
 
 func (h DiceController) handleConnect(s *melody.Session) {
@@ -38,6 +46,15 @@ func (h DiceController) handleConnect(s *melody.Session) {
 		}
 		r, _ := json.Marshal(ret)
 		s.Write(r)
+
+  ret = models.Command{
+    "players",
+    len(h.sessions),
+  }
+	for s, _ := range h.sessions {
+		r, _ := json.Marshal(ret)
+		s.Write(r)
+	}
 }
 
 func (h DiceController) reset() {
