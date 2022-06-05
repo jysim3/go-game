@@ -6,10 +6,16 @@ import (
 	"jysim/game/controllers"
 
 	"github.com/gin-gonic/gin"
+    "github.com/gin-contrib/cors"
+
 )
 
 func NewRouter() *gin.Engine {
 	r := gin.Default()
+
+    config := cors.DefaultConfig()
+    config.AllowOrigins = []string{"http://*.jysim3.com", "http://jysim3.com"}
+    r.Use(cors.New(config))
 
 	r.GET("/channel/:name", func(c *gin.Context) {
 		http.ServeFile(c.Writer, c.Request, "chan.html")
@@ -34,6 +40,9 @@ func NewRouter() *gin.Engine {
 	joker := controllers.NewWebSocketController(controllers.NewJokerController())
 	r.GET("/joker/:name/ws", joker.WebSocket)
 	r.POST("/joker/:name/reset", joker.Reset)
+
+
+
 	r.GET("/summary", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"dice": other.Summary(),
