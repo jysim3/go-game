@@ -225,7 +225,6 @@ export default {
       // const host = 'localhost:8081';
       const host =
         process.env.VUE_APP_API_HOST ||
-        "localhost:8081" ||
         window.location.host;
       const ws = new WebSocket(`ws://${host}/joker/${this.id}/ws`);
       this.ws = ws;
