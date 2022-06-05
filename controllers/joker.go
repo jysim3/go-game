@@ -88,6 +88,11 @@ func (h *Joker) HandleRequest(c *gin.Context) {
 	h.m.HandleRequest(c.Writer, c.Request)
 }
 
+func (h *Joker) GetCount() int {
+  return len(h.sessions)
+}
+
+
 func NewJokerController() func() RoomControllerInterface {
 	return func() RoomControllerInterface {
 		h := Joker{}

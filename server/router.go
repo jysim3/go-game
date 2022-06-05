@@ -34,5 +34,12 @@ func NewRouter() *gin.Engine {
 	joker := controllers.NewWebSocketController(controllers.NewJokerController())
 	r.GET("/joker/:name/ws", joker.WebSocket)
 	r.POST("/joker/:name/reset", joker.Reset)
+	r.GET("/summary", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"dice": other.Summary(),
+			"rock": rock.Summary(),
+			"joker": joker.Summary(),
+		})
+  })
 	return r
 }

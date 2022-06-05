@@ -145,6 +145,10 @@ func (h DiceController) Close() {
 	h.m.Close()
 }
 
+func (h DiceController) GetCount() int {
+  return len(h.sessions)
+}
+
 func NewDiceController() func() RoomControllerInterface {
 	return func() RoomControllerInterface {
 		h := DiceController{}

@@ -92,6 +92,10 @@ func (h Rock) HandleRequest(c *gin.Context) {
 	h.m.HandleRequest(c.Writer, c.Request)
 }
 
+func (h Rock) GetCount() int {
+  return len(h.sessions)
+}
+
 func NewRockController() func() RoomControllerInterface {
 	return func() RoomControllerInterface {
 		h := Rock{}
