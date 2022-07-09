@@ -3,8 +3,7 @@ package controllers
 import (
 	"log"
 	"net/http"
-  "time"
-
+	"time"
 
 	//"jysim/game/models"
 
@@ -17,12 +16,12 @@ type RoomControllerInterface interface {
 	handleConnect(s *melody.Session)
 	handleMessage(s *melody.Session, msg []byte)
 	HandleRequest(c *gin.Context)
-GetCount() int
+	GetCount() int
 	Close()
 }
 
 type WebSocketController struct {
-	m map[string]RoomControllerInterface
+	m             map[string]RoomControllerInterface
 	newController func() RoomControllerInterface
 }
 
@@ -46,18 +45,18 @@ func (h WebSocketController) Reset(c *gin.Context) {
 }
 
 func (h WebSocketController) cleanRoom() {
-      for range time.Tick(time.Second * 60) {
+	for range time.Tick(time.Second * 60) {
 
-        for name, session := range h.m {
-          if (session.GetCount() == 0) {
-            session.Close()
-            delete(h.m, name)
-          }
-        }
-        if (len(h.m) == 0) {
-          break
-        }
-      }
+		for name, session := range h.m {
+			if session.GetCount() == 0 {
+				session.Close()
+				delete(h.m, name)
+			}
+		}
+		if len(h.m) == 0 {
+			break
+		}
+	}
 }
 
 func (h WebSocketController) WebSocket(c *gin.Context) {
@@ -66,20 +65,20 @@ func (h WebSocketController) WebSocket(c *gin.Context) {
 		val.HandleRequest(c)
 	} else {
 		dice := h.newController()
-      if (len(h.m) == 0) {
-       go h.cleanRoom()
-      }
+		if len(h.m) == 0 {
+			go h.cleanRoom()
+		}
 		h.m[c.Param("name")] = dice
 		dice.HandleRequest(c)
 	}
 }
 
 func (h WebSocketController) Summary() map[string]int {
-  roomSessions := make(map[string]int)
-  for name, session := range h.m {
-    roomSessions[name] = session.GetCount()
-  }
-return roomSessions
+	roomSessions := make(map[string]int)
+	for name, session := range h.m {
+		roomSessions[name] = session.GetCount()
+	}
+	return roomSessions
 }
 
 func NewWebSocketController(newController func() RoomControllerInterface) *WebSocketController {

@@ -1,22 +1,28 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 
 	"jysim/game/controllers"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-    "github.com/gin-contrib/cors"
-
 )
 
 func NewRouter() *gin.Engine {
 	r := gin.Default()
 
-    config := cors.DefaultConfig()
-    config.AllowOrigins = []string{"http://*.jysim3.com", "http://jysim3.com"}
-    r.Use(cors.New(config))
-
+	config := cors.DefaultConfig()
+	if os.Getenv("SERVER_ENV") == "dev" {
+		config.AllowOrigins = []string{"http://*.jysim3.com", "http://jysim3.com", "http://localhost:8080"}
+	} else {
+		config.AllowOrigins = []string{"http://*.jysim3.com", "http://jysim3.com"}
+	}
+	r.Use(cors.New(config))
+	fmt.Println(os.Getenv("SERVER_ENV"))
+	fmt.Println(config.AllowOrigins)
 	r.GET("/channel/:name", func(c *gin.Context) {
 		http.ServeFile(c.Writer, c.Request, "chan.html")
 	})
@@ -41,14 +47,12 @@ func NewRouter() *gin.Engine {
 	r.GET("/joker/:name/ws", joker.WebSocket)
 	r.POST("/joker/:name/reset", joker.Reset)
 
-
-
 	r.GET("/summary", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"dice": other.Summary(),
-			"rock": rock.Summary(),
+			"dice":  other.Summary(),
+			"rock":  rock.Summary(),
 			"joker": joker.Summary(),
 		})
-  })
+	})
 	return r
 }

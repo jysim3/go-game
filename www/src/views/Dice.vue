@@ -1,6 +1,20 @@
 <template>
   <div>
     <v-container>
+      <v-dialog v-model="nameDialog">
+        <v-card>
+          <v-card-title>
+            <span class="text-h5">User Profile</span>
+          </v-card-title>
+          <v-card-text>
+            <v-text-field label="Name" v-model="name"></v-text-field>
+          </v-card-text>
+
+          <v-card-actions>
+            <v-btn color="blue darken-1" text @click="connect"> Save </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
       <v-row justify="center" class="text-center">
         <v-col cols="auto">
           <h1 class="text-h2">
@@ -10,39 +24,51 @@
       </v-row>
       <v-row justify="center">
         <v-col cols="auto">
-          Number of players: {{ n_players === null ? 'Not Connected' : n_players }}
+          Number of players:
+          {{ n_players === null ? "Not Connected" : n_players }}
         </v-col>
       </v-row>
-      <v-row v-if="dice.length > 5">
-        <v-col cols="12" class="d-flex justify-center">
-          <v-switch v-model="withOnes" label="With Joker(1)" />
-        </v-col>
-        <v-col
-          cols="12"
-          v-for="die in [1, 2, 3, 4, 5, 6]"
-          :key="die"
-          class="d-flex justify-center"
-        >
-          <v-img
-            :src="require(`@/assets/dice/${die}.png`)"
-            class="rounded-lg"
-            max-width="30"
-            :gradient="
-              highlight === die
-                ? 'to top right, rgba(255,0,0,.33), rgba(56,0,0,.7)'
-                : ''
-            "
-            @click="highlight = die"
-          />
-          <span class="text-h6 ml-5">{{ diceResult[die] || "0" }}</span>
+      <v-row v-if="roundEnded">
+        <v-col>
+          <v-card rounded="xl">
+            <v-card-title>
+              <h3>Results</h3>
+            </v-card-title>
+            <v-card-text>
+              <v-row>
+                <v-col
+                  v-for="die in [1, 2, 3, 4, 5, 6]"
+                  :key="die"
+                  class="d-flex justify-center flex-column text-center align-center"
+                >
+                  <v-img
+                    :src="require(`@/assets/dice/${die}.png`)"
+                    class="rounded-lg"
+                    max-width="30"
+                    :gradient="
+                      highlight === die
+                        ? 'to top right, rgba(255,0,0,.33), rgba(56,0,0,.7)'
+                        : ''
+                    "
+                    @click="highlight = die"
+                  />
+                  <span class="text-h6">{{ diceSum[die] || "0" }}</span>
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
         </v-col>
       </v-row>
       <div v-if="!hide">
+        <v-row v-if="roundEnded">
+          <v-col><h3 class="text-center">Player Dices</h3></v-col>
+        </v-row>
         <v-row
           justify="center"
-          v-for="(dice, index) in diceFormatted"
-          :key="index"
+          v-for="(dice, name) in diceFormatted"
+          :key="name"
         >
+          <v-col cols="2" v-if="roundEnded" class="overflow-hidden" style="box-shadow: inset rgb(0 0 0 / 20%) -9px 0px 9px 0px"> {{ name }}</v-col>
           <v-col cols="2" v-for="(die, index) in dice" :key="index">
             <v-img
               @click="highlight = die"
@@ -60,19 +86,25 @@
       </div>
       <v-row justify="center">
         <v-col cols="12">
-          <v-btn color="success" block v-if="diceFlush" @click.stop="onReroll">Reroll</v-btn>
-        </v-col>
-        <v-col cols="12">
-          <v-btn color="success" block v-if="status === STATUS.DISCONNECTED" @click.stop="connect">Reconnect</v-btn>
-        </v-col>
-        <v-col cols="auto">
-          <v-btn :color="!rerollAllowed ? 'primary' : 'success'" @click.stop="onReroll">Restart Dice</v-btn>
-        </v-col>
-        <v-col cols="auto">
           <v-btn
+            color="success"
+            block
+            @click.stop="connect"
+            v-if="status === STATUS.DISCONNECTED"
+            >Reconnect</v-btn
+          >
+          <v-btn
+            color="success"
+            block
+            @click.stop="onReroll"
+            v-else-if="rerollAllowed"
+            >Reroll</v-btn
+          >
+          <v-btn
+            v-else
             color="red lighten-2"
             dark
-            :disabled="status == STATUS.DISCONNECTED"
+            block
             @click.stop="
               action = open;
               dialog = true;
@@ -81,17 +113,10 @@
           >
         </v-col>
         <v-col cols="auto">
-          <v-btn
-            color="primary"
-            @click="
-              action = reset;
-              dialog = true;
-            "
-            >Reset</v-btn
-          >
+          <v-switch v-model="hide" label="Hide dice" />
         </v-col>
         <v-col cols="auto">
-          <v-switch v-model="hide" label="Hide dice" />
+          <v-switch v-model="withOnes" label="With 1s" />
         </v-col>
         <v-dialog v-model="dialog" width="500">
           <v-card>
@@ -113,29 +138,40 @@
           </v-card>
         </v-dialog>
       </v-row>
-      <v-btn fab @click.stop="backdoor" small bottom  absolute text class="ma-6" />
+      <v-btn fab @click.stop="backdoor" small bottom absolute text right />
+      <v-btn
+        small
+        bottom
+        absolute
+        text
+        @click="
+          action = reset;
+          dialog = true;
+        "
+        >Reset</v-btn
+      >
     </v-container>
   </div>
 </template>
 
 <script>
 // import HelloWorld from "../components/HelloWorld";
-    function diceResult(dice, withOnes) {
-      return dice.reduce(
-        (resultArray, item) => {
-          if (item === 1 && withOnes) {
-            resultArray[2] += 1;
-            resultArray[3] += 1;
-            resultArray[4] += 1;
-            resultArray[5] += 1;
-            resultArray[6] += 1;
-          }
-          resultArray[item] += 1;
-          return resultArray;
-        },
-        { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }
-      );
-    }
+function diceSum(dice, withOnes) {
+  return dice.reduce(
+    (resultArray, item) => {
+      if (item === 1 && withOnes) {
+        resultArray[2] += 1;
+        resultArray[3] += 1;
+        resultArray[4] += 1;
+        resultArray[5] += 1;
+        resultArray[6] += 1;
+      }
+      resultArray[item] += 1;
+      return resultArray;
+    },
+    { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 }
+  );
+}
 
 export default {
   name: "DiceView",
@@ -147,15 +183,19 @@ export default {
   },
   data() {
     const STATUS = {
-  DISCONNECTED: "DISCONNECTED",
-  STARTUP: "STARTUP",
-  PLAYING: "PLAYING",
-  END: "END"
-};
+      DISCONNECTED: "DISCONNECTED",
+      STARTUP: "STARTUP",
+      CONNECTED: "CONNECTED",
+      PLAYING: "PLAYING",
+      END: "END",
+    };
     return {
       STATUS,
       msg: "xxx",
       dice: [1, 2, 3, 4, 5],
+      diceResult: null,
+      name: "",
+      nameDialog: true,
       ws: null,
       hide: false,
       status: STATUS.STARTUP,
@@ -171,67 +211,77 @@ export default {
   },
   computed: {
     diceFlush() {
-return Object.values(diceResult(this.dice, false)).every(e => e <= 1);
+      return Object.values(diceSum(this.dice, false)).every((e) => e <= 1);
     },
     rerollAllowed() {
-return this.dice.length > 5 || this.status === this.STATUS.STARTUP ||  this.diceFlush;
+      return this.dice.length > 5 || this.diceFlush;
     },
-    diceResult() {
-      console.log(diceResult(this.dice, this.withOnes));
-      return diceResult(this.dice, this.withOnes);
+    diceSum() {
+      return diceSum(this.dice, this.withOnes);
     },
     diceFormatted() {
-      return this.dice.reduce((resultArray, item, index) => {
-        const chunkIndex = Math.floor(index / 5);
-        if (!resultArray[chunkIndex]) {
-          resultArray[chunkIndex] = []; // start a new chunk
-        }
-        resultArray[chunkIndex].push(item);
-
-        return resultArray;
-      }, []);
+      if (this.diceResult) {
+        return this.diceResult;
+      }
+      return {
+        "": this.dice,
+      };
+    },
+    roundEnded() {
+      return this.diceResult !== null;
     },
   },
   mounted() {
     console.log(this.status === this.STATUS.STARTUP);
-    this.connect();
   },
   methods: {
     connect() {
-    this.status = this.STATUS.STARTUP;
-    const host =
-      process.env.VUE_APP_API_HOST || window.location.host;
-      const ws = new WebSocket(`ws://${host}/dice/${this.id}/ws`);
-    this.ws = ws;
-    var self = this;
-    ws.onmessage = function (msg) {
-      const j = JSON.parse(msg.data);
-      console.log(j);
-      if (self.dice.lenght > 5) {
+      this.nameDialog = false;
       this.status = this.STATUS.STARTUP;
-      }
-      if (j.command == "start") {
-        self.dice = j.data;
-      }
-      if (j.command == "players") {
-        self.n_players = j.data;
-      }
-    };
-    ws.onclose = function () {
-      console.log("HIHI close");
-      self.status = self.STATUS.DISCONNECTED;
-    };
-    ws.onerror = function () {
-      console.log("HIHI");
-      self.status = self.STATUS.DISCONNECTED;
-    };
-
+      const host = process.env.VUE_APP_API_HOST || window.location.host;
+      const ws = new WebSocket(`ws://${host}/dice/${this.id}/ws`);
+      this.ws = ws;
+      var self = this;
+      ws.onopen = function () {
+        ws.send(
+          JSON.stringify({
+            command: "setName",
+            data: self.name,
+          })
+        );
+        self.status = self.STATUS.CONNECTED
+      };
+      ws.onmessage = function (msg) {
+        const j = JSON.parse(msg.data);
+        console.log(j);
+        if (self.dice.lenght > 5) {
+          this.status = this.STATUS.STARTUP;
+        }
+        if (j.command == "start") {
+          self.dice = j.data;
+          self.diceResult = null;
+        }
+        if (j.command == "open") {
+          self.diceResult = j.data;
+        }
+        if (j.command == "players") {
+          self.n_players = j.data;
+        }
+      };
+      ws.onclose = function () {
+        self.status = self.STATUS.DISCONNECTED;
+        setTimeout(self.connect, 1000);
+      };
+      ws.onerror = function () {
+        self.status = self.STATUS.DISCONNECTED;
+        setTimeout(self.connect, 1000);
+      };
     },
     backdoor() {
       this.ws.send(
         JSON.stringify({
           command: "backdoor",
-          data: [1,2,3,4,5]
+          data: [1, 2, 3, 4, 5],
         })
       );
     },

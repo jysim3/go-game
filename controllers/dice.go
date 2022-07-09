@@ -11,10 +11,6 @@ import (
 	"gopkg.in/olahol/melody.v1"
 )
 
-type DiceRouter struct {
-	m map[string]*DiceController
-}
-
 type DiceController struct {
 	m        *melody.Melody
 	status   string
@@ -23,10 +19,10 @@ type DiceController struct {
 
 func (h DiceController) handleDisconnect(s *melody.Session) {
 	delete(h.sessions, s)
-  ret := models.Command{
-    "players",
-    len(h.sessions),
-  }
+	ret := models.Command{
+		"players",
+		len(h.sessions),
+	}
 	for s, _ := range h.sessions {
 		r, _ := json.Marshal(ret)
 		s.Write(r)
@@ -34,23 +30,23 @@ func (h DiceController) handleDisconnect(s *melody.Session) {
 }
 
 func (h DiceController) handleConnect(s *melody.Session) {
-		h.sessions[s] = make(map[string]interface{})
-		var list [5]int
-		for i, _ := range list {
-			list[i] = rand.Intn(6) + 1
-		}
-		h.sessions[s]["dice"] = list
-		ret := models.Command{
-			"start",
-			list,
-		}
-		r, _ := json.Marshal(ret)
-		s.Write(r)
+	h.sessions[s] = make(map[string]interface{})
+	var list [5]int
+	for i, _ := range list {
+		list[i] = rand.Intn(6) + 1
+	}
+	h.sessions[s]["dice"] = list
+	ret := models.Command{
+		"start",
+		list,
+	}
+	r, _ := json.Marshal(ret)
+	s.Write(r)
 
-  ret = models.Command{
-    "players",
-    len(h.sessions),
-  }
+	ret = models.Command{
+		"players",
+		len(h.sessions),
+	}
 	for s, _ := range h.sessions {
 		r, _ := json.Marshal(ret)
 		s.Write(r)
@@ -65,13 +61,13 @@ func (h DiceController) reset() {
 }
 
 func (h DiceController) open() {
-	fullList := make([]int, 0)
+	fullList := make(map[string][5]int)
 	for s, _ := range h.sessions {
-		list :=  h.sessions[s]["dice"].([5]int)
-		fullList = append(fullList, list[:]...)
+		list, name := h.sessions[s]["dice"].([5]int), h.sessions[s]["name"].(string)
+		fullList[name] = list
 	}
 	ret := models.Command{
-		"start",
+		"open",
 		fullList,
 	}
 	r, _ := json.Marshal(ret)
@@ -120,17 +116,17 @@ func (h DiceController) handleMessage(s *melody.Session, msg []byte) {
 			h.status = ""
 		}
 	} else if command.Code == "setName" {
-    h.sessions[s]["name"] = command.Data.(string)
+		h.sessions[s]["name"] = command.Data.(string)
 	} else if command.Code == "backdoor" {
-    a := command.Data.([]interface{})
-    var temp [5]int;
-    for i := range a {
-      temp[i] = int(a[i].(float64))
-    }
-    h.sessions[s]["dice"] = temp
+		a := command.Data.([]interface{})
+		var temp [5]int
+		for i := range a {
+			temp[i] = int(a[i].(float64))
+		}
+		h.sessions[s]["dice"] = temp
 		ret := models.Command{
 			"start",
-			h.sessions[s]["dice"] ,
+			h.sessions[s]["dice"],
 		}
 		r, _ := json.Marshal(ret)
 		s.Write(r)
@@ -146,7 +142,7 @@ func (h DiceController) Close() {
 }
 
 func (h DiceController) GetCount() int {
-  return len(h.sessions)
+	return len(h.sessions)
 }
 
 func NewDiceController() func() RoomControllerInterface {
