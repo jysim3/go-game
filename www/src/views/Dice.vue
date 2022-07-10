@@ -17,9 +17,33 @@
       </v-dialog>
       <v-row justify="center" class="text-center">
         <v-col cols="auto">
-          <h1 class="text-h2">
-            Dice - room <code>{{ id }}</code>
-          </h1>
+          <h1 class="text-h2">Dice Game</h1>
+        </v-col>
+        <v-col cols="2" class="d-flex align-center">
+          <v-img
+            :src="require(`@/assets/dice/6.png`)"
+            class="rounded-lg"
+            max-width="50"
+          />
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col cols="12">
+          <v-card class="mx-4" rounded="lg">
+            <v-card-title>
+              <v-btn color="yellow accent-4" fab elevation="0">
+                <v-img
+                  :src="require('@/assets/room-icon.png')"
+                  class="rounded-lg"
+                  max-width="30"
+                />
+              </v-btn>
+              <div class="ml-3">
+                Room:
+                <strong class="red--text text--lighten-1">{{ id }}</strong>
+              </div>
+            </v-card-title>
+          </v-card>
         </v-col>
       </v-row>
       <v-row justify="center">
@@ -145,7 +169,7 @@
           </v-card>
         </v-dialog>
       </v-row>
-      <v-btn fab @click.stop="backdoor" small bottom absolute text right />
+      <v-btn fab @click.stop="backdoor" small absolute text right />
       <div style="position: absolute; bottom: 0">
         <v-btn
           small
@@ -226,7 +250,10 @@ export default {
       return this.diceResult != null || this.diceFlush;
     },
     diceSum() {
-      return diceSum(this.dice, this.withOnes);
+      return diceSum(
+        Object.values(this.diceResult).reduce((a, c) => a.concat(c), []),
+        this.withOnes
+      );
     },
     diceFormatted() {
       if (this.diceResult) {
@@ -280,13 +307,13 @@ export default {
       ws.onclose = function () {
         self.status = self.STATUS.DISCONNECTED;
         if (!self.wsReconnect) {
-          self.wsReconnect = setTimeout(self.connect, 1000);
+          // self.wsReconnect = setTimeout(self.connect, 1000);
         }
       };
       ws.onerror = function () {
         self.status = self.STATUS.DISCONNECTED;
         if (!self.wsReconnect) {
-          self.wsReconnect = setTimeout(self.connect, 1000);
+          // self.wsReconnect = setTimeout(self.connect, 1000);
         }
       };
     },
