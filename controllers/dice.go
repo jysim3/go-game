@@ -12,9 +12,10 @@ import (
 )
 
 type DiceController struct {
-	m        *melody.Melody
-	status   string
-	sessions map[*melody.Session]map[string]interface{}
+	m           *melody.Melody
+	status      string
+	sessionData map[string]map[string]interface{}
+	sessions    map[*melody.Session]map[string]interface{}
 }
 
 func (h DiceController) handleDisconnect(s *melody.Session) {
@@ -30,15 +31,26 @@ func (h DiceController) handleDisconnect(s *melody.Session) {
 }
 
 func (h DiceController) handleConnect(s *melody.Session) {
-	h.sessions[s] = make(map[string]interface{})
-	var list [5]int
-	for i, _ := range list {
-		list[i] = rand.Intn(6) + 1
+	sessionId, exists := s.Get("sessionId")
+	if exists {
+		if prevItem, ok := h.sessionData[sessionId.(string)]; ok {
+			h.sessions[s] = prevItem
+		} else {
+			exists = false
+		}
 	}
-	h.sessions[s]["dice"] = list
+	if !exists {
+		h.sessions[s] = make(map[string]interface{})
+		var list [5]int
+		for i, _ := range list {
+			list[i] = rand.Intn(6) + 1
+		}
+		h.sessions[s]["dice"] = list
+	}
+	h.sessionData[sessionId.(string)] = h.sessions[s]
 	ret := models.Command{
 		"start",
-		list,
+		h.sessions[s]["dice"],
 	}
 	r, _ := json.Marshal(ret)
 	s.Write(r)
@@ -84,6 +96,9 @@ func (h DiceController) restartGame() {
 			list[i] = rand.Intn(6) + 1
 		}
 		h.sessions[s]["dice"] = list
+		if sessionId, ok := s.Get("sessionId"); ok {
+			h.sessionData[sessionId.(string)] = h.sessions[s]
+		}
 		ret := models.Command{
 			"start",
 			list,
@@ -134,6 +149,11 @@ func (h DiceController) handleMessage(s *melody.Session, msg []byte) {
 }
 
 func (h DiceController) HandleRequest(c *gin.Context) {
+
+	if val, err := c.Cookie("sessionId"); err == nil {
+		h.m.HandleRequestWithKeys(c.Writer, c.Request, map[string]interface{}{"sessionId": val})
+		return
+	}
 	h.m.HandleRequest(c.Writer, c.Request)
 }
 
@@ -151,6 +171,7 @@ func NewDiceController() func() RoomControllerInterface {
 		m := melody.New()
 		h.m = m
 		h.sessions = make(map[*melody.Session]map[string]interface{})
+		h.sessionData = make(map[string]map[string]interface{})
 		m.HandleConnect(h.handleConnect)
 		m.HandleDisconnect(h.handleDisconnect)
 		m.HandleMessage(h.handleMessage)

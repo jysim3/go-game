@@ -68,7 +68,14 @@
           v-for="(dice, name) in diceFormatted"
           :key="name"
         >
-          <v-col cols="2" v-if="roundEnded" class="overflow-hidden" style="box-shadow: inset rgb(0 0 0 / 20%) -9px 0px 9px 0px"> {{ name }}</v-col>
+          <v-col
+            cols="2"
+            v-if="roundEnded"
+            class="overflow-hidden"
+            style="box-shadow: inset rgb(0 0 0 / 20%) -9px 0px 9px 0px"
+          >
+            {{ name }}</v-col
+          >
           <v-col cols="2" v-for="(die, index) in dice" :key="index">
             <v-img
               @click="highlight = die"
@@ -197,6 +204,7 @@ export default {
       name: "",
       nameDialog: true,
       ws: null,
+      wsReconnect: null,
       hide: false,
       status: STATUS.STARTUP,
       action: null,
@@ -214,7 +222,7 @@ export default {
       return Object.values(diceSum(this.dice, false)).every((e) => e <= 1);
     },
     rerollAllowed() {
-      return this.dice.length > 5 || this.diceFlush;
+      return this.diceResult != null || this.diceFlush;
     },
     diceSum() {
       return diceSum(this.dice, this.withOnes);
@@ -243,13 +251,17 @@ export default {
       this.ws = ws;
       var self = this;
       ws.onopen = function () {
+        if (self.wsReconnect) {
+          clearTimeout(self.wsReconnect);
+          self.wsReconnect = null;
+        }
         ws.send(
           JSON.stringify({
             command: "setName",
             data: self.name,
           })
         );
-        self.status = self.STATUS.CONNECTED
+        self.status = self.STATUS.CONNECTED;
       };
       ws.onmessage = function (msg) {
         const j = JSON.parse(msg.data);
@@ -270,11 +282,15 @@ export default {
       };
       ws.onclose = function () {
         self.status = self.STATUS.DISCONNECTED;
-        setTimeout(self.connect, 1000);
+        if (!self.wsReconnect) {
+          self.wsReconnect = setTimeout(self.connect, 1000);
+        }
       };
       ws.onerror = function () {
         self.status = self.STATUS.DISCONNECTED;
-        setTimeout(self.connect, 1000);
+        if (!self.wsReconnect) {
+          self.wsReconnect = setTimeout(self.connect, 1000);
+        }
       };
     },
     backdoor() {
