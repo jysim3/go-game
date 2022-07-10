@@ -67,7 +67,7 @@ func NewRouter() *gin.Engine {
 		r.GET("/", func(c *gin.Context) {
 
 			if _, err := c.Cookie("sessionId"); err != nil {
-				c.SetCookie("sessionId", uuid.New().String() /* maxAge= */, 3600 /* path= */, "/" /* domain= */, "localhost" /* httpOnly */, false, true)
+				c.SetCookie("sessionId", uuid.New().String() /* maxAge= */, 3600 /* path= */, "/" /* domain= */, "game.jysim3.com" /* httpOnly */, false, true)
 			}
 			http.ServeFile(c.Writer, c.Request, "www/build/index.html")
 		})

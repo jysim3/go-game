@@ -47,6 +47,27 @@ func (h DiceController) handleConnect(s *melody.Session) {
 		}
 		h.sessions[s]["dice"] = list
 	}
+	if _, ok := h.sessions[s]["name"]; !ok {
+		ret := models.Command{
+			"setName",
+			"",
+		}
+		r, _ := json.Marshal(ret)
+		s.Write(r)
+	}
+	if h.status == "open" {
+		fullList := make(map[string][5]int)
+		for s, _ := range h.sessions {
+			list, name := h.sessions[s]["dice"].([5]int), h.sessions[s]["name"].(string)
+			fullList[name] = list
+		}
+		ret := models.Command{
+			"open",
+			fullList,
+		}
+		r, _ := json.Marshal(ret)
+		s.Write(r)
+	}
 	h.sessionData[sessionId.(string)] = h.sessions[s]
 	ret := models.Command{
 		"start",
@@ -86,7 +107,7 @@ func (h DiceController) open() {
 	for s, _ := range h.sessions {
 		s.Write(r)
 	}
-	h.status = ""
+	h.status = "open"
 }
 
 func (h DiceController) restartGame() {
@@ -119,17 +140,9 @@ func (h DiceController) handleMessage(s *melody.Session, msg []byte) {
 	if command.Code == "reset" {
 		h.reset()
 	} else if command.Code == "start" {
-		if h.status == "" {
-			h.restartGame()
-		} else {
-			s.Write([]byte("Fuck off"))
-		}
+		h.restartGame()
 	} else if command.Code == "open" {
-		if h.status == "" {
-			h.open()
-		} else {
-			h.status = ""
-		}
+		h.open()
 	} else if command.Code == "setName" {
 		h.sessions[s]["name"] = command.Data.(string)
 	} else if command.Code == "backdoor" {

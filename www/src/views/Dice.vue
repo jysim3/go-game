@@ -11,7 +11,7 @@
           </v-card-text>
 
           <v-card-actions>
-            <v-btn color="blue darken-1" text @click="connect"> Save </v-btn>
+            <v-btn color="blue darken-1" text @click="setName"> Save </v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -146,17 +146,18 @@
         </v-dialog>
       </v-row>
       <v-btn fab @click.stop="backdoor" small bottom absolute text right />
-      <v-btn
-        small
-        bottom
-        absolute
-        text
-        @click="
-          action = reset;
-          dialog = true;
-        "
-        >Reset</v-btn
-      >
+      <div style="position: absolute; bottom: 0">
+        <v-btn
+          small
+          text
+          @click="
+            action = reset;
+            dialog = true;
+          "
+          >Reset</v-btn
+        >
+        <v-btn small text @click="nameDialog = true">Rename</v-btn>
+      </div>
     </v-container>
   </div>
 </template>
@@ -202,7 +203,7 @@ export default {
       dice: [1, 2, 3, 4, 5],
       diceResult: null,
       name: "",
-      nameDialog: true,
+      nameDialog: false,
       ws: null,
       wsReconnect: null,
       hide: false,
@@ -240,11 +241,10 @@ export default {
     },
   },
   mounted() {
-    console.log(this.status === this.STATUS.STARTUP);
+    this.connect();
   },
   methods: {
     connect() {
-      this.nameDialog = false;
       this.status = this.STATUS.STARTUP;
       const host = process.env.VUE_APP_API_HOST || window.location.host;
       const ws = new WebSocket(`ws://${host}/dice/${this.id}/ws`);
@@ -255,19 +255,16 @@ export default {
           clearTimeout(self.wsReconnect);
           self.wsReconnect = null;
         }
-        ws.send(
-          JSON.stringify({
-            command: "setName",
-            data: self.name,
-          })
-        );
         self.status = self.STATUS.CONNECTED;
       };
       ws.onmessage = function (msg) {
         const j = JSON.parse(msg.data);
         console.log(j);
         if (self.dice.lenght > 5) {
-          this.status = this.STATUS.STARTUP;
+          self.status = self.STATUS.STARTUP;
+        }
+        if (j.command == "setName") {
+          self.nameDialog = true;
         }
         if (j.command == "start") {
           self.dice = j.data;
@@ -292,6 +289,16 @@ export default {
           self.wsReconnect = setTimeout(self.connect, 1000);
         }
       };
+    },
+
+    setName() {
+      this.nameDialog = false;
+      this.ws.send(
+        JSON.stringify({
+          command: "setName",
+          data: this.name,
+        })
+      );
     },
     backdoor() {
       this.ws.send(
