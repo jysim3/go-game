@@ -38,6 +38,8 @@ func (h DiceController) handleConnect(s *melody.Session) {
 		} else {
 			exists = false
 		}
+	} else {
+		h.Close()
 	}
 	if !exists {
 		h.sessions[s] = make(map[string]interface{})
