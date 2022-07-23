@@ -17,7 +17,7 @@
       </v-dialog>
       <v-row justify="center" class="text-center">
         <v-col cols="auto">
-          <h1 class="text-h2">Dice Game</h1>
+          <h1 class="text-h2">Liar's Dice</h1>
         </v-col>
         <v-col cols="2" class="d-flex align-center">
           <v-img
@@ -28,38 +28,45 @@
         </v-col>
       </v-row>
       <v-row>
-        <v-col cols="12">
-          <v-card class="mx-4" rounded="lg">
+        <v-col cols="6">
+          <v-card class="mx-4 blue darken-4" dark rounded="lg" elevation="0">
             <v-card-title>
-              <v-btn color="yellow accent-4" fab elevation="0">
-                <v-img
-                  :src="require('@/assets/room-icon.png')"
-                  class="rounded-lg"
-                  max-width="30"
-                />
-              </v-btn>
+              <v-icon>mdi-home</v-icon>
               <div class="ml-3">
-                Room:
-                <strong class="red--text text--lighten-1">{{ id }}</strong>
+                <div class="caption">Room:</div>
+                <div>
+                  <strong class="text-uppercase text--lighten-1">{{
+                    id
+                  }}</strong>
+                </div>
+              </div>
+            </v-card-title>
+          </v-card>
+        </v-col>
+        <v-col cols="6">
+          <v-card class="mx-4 blue darken-4" dark rounded="lg" elevation="0">
+            <v-card-title>
+              <v-icon>mdi-account</v-icon>
+              <div class="ml-3">
+                <div class="caption">Players</div>
+                <div>
+                  <strong class="text-uppercase text--lighten-1">
+                    {{ n_players === null ? "Not Connected" : n_players }}
+                  </strong>
+                </div>
               </div>
             </v-card-title>
           </v-card>
         </v-col>
       </v-row>
-      <v-row justify="center">
-        <v-col cols="auto">
-          Number of players:
-          {{ n_players === null ? "Not Connected" : n_players }}
-        </v-col>
-      </v-row>
       <v-row v-if="roundEnded">
         <v-col>
           <v-card rounded="xl">
-            <v-card-title>
+            <v-card-title class="justify-center">
               <h3>Results</h3>
             </v-card-title>
             <v-card-text>
-              <v-row>
+              <v-row class="mx-3">
                 <v-col
                   v-for="die in [1, 2, 3, 4, 5, 6]"
                   :key="die"
@@ -83,7 +90,7 @@
           </v-card>
         </v-col>
       </v-row>
-      <div v-if="!hide">
+      <div v-if="!hide" class="my-5">
         <v-row v-if="roundEnded">
           <v-col><h3 class="text-center">Player Dices</h3></v-col>
         </v-row>
@@ -124,24 +131,22 @@
             v-if="status === STATUS.DISCONNECTED"
             >Reconnect</v-btn
           >
-          <v-btn
-            color="success"
-            block
-            @click.stop="onReroll"
-            v-else-if="rerollAllowed"
-            >Reroll</v-btn
-          >
-          <v-btn
-            v-else
-            color="red lighten-2"
-            dark
-            block
-            @click.stop="
-              action = open;
-              dialog = true;
-            "
-            >Open</v-btn
-          >
+          <v-row>
+            <v-col v-if="rerollAllowed">
+              <v-btn color="success" block @click.stop="onReroll">Reroll</v-btn>
+            </v-col>
+            <v-col v-if="diceResult == null">
+              <v-btn
+                color="blue lighten-2"
+                block
+                @click.stop="
+                  action = open;
+                  dialog = true;
+                "
+                >Open</v-btn
+              >
+            </v-col>
+          </v-row>
         </v-col>
         <v-col cols="auto">
           <v-switch v-model="hide" label="Hide dice" />
