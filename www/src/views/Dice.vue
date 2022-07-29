@@ -1,6 +1,34 @@
 <template>
   <div>
     <v-container>
+      <v-dialog v-model="backdoorDialog">
+        <v-card>
+          <v-card-title>
+            <span class="text-h5">Set your dice</span>
+          </v-card-title>
+          <v-card-text>
+            <v-row>
+              <v-col
+                cols="2"
+                v-for="(die, index) in backDice"
+                :key="index + 'back'"
+              >
+                <v-img
+                  @click.stop="onClickBackDice(index)"
+                  :src="require(`@/assets/dice/${die}.png`)"
+                  class="rounded-lg"
+                  max-width="150"
+                />
+              </v-col>
+            </v-row>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn color="blue darken-1" text @click="setBackDice">
+              Save
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
       <v-dialog v-model="nameDialog">
         <v-card>
           <v-card-title>
@@ -174,7 +202,6 @@
           </v-card>
         </v-dialog>
       </v-row>
-      <v-btn fab @click.stop="backdoor" small absolute text right />
       <div style="position: absolute; bottom: 0">
         <v-btn
           small
@@ -185,7 +212,8 @@
           "
           >Reset</v-btn
         >
-        <v-btn small text @click="nameDialog = true">Rename</v-btn>
+        <v-btn small text @click="nameDialog = true" style="z-index:1">Rename</v-btn>
+        <v-btn fab @click.stop="backdoor"  style="z-index:0" small absolute text right />
       </div>
     </v-container>
   </div>
@@ -230,7 +258,9 @@ export default {
       STATUS,
       msg: "xxx",
       dice: [1, 2, 3, 4, 5],
+      backDice: [6, 2, 3, 4, 5],
       diceResult: null,
+      backdoorDialog: false,
       name: "",
       nameDialog: false,
       ws: null,
@@ -276,6 +306,13 @@ export default {
     this.connect();
   },
   methods: {
+    onClickBackDice(index) {
+      this.$set(
+        this.backDice,
+        index,
+        this.backDice[index] == 6 ? 1 : this.backDice[index] + 1
+      );
+    },
     connect() {
       this.status = this.STATUS.STARTUP;
       const host = process.env.VUE_APP_API_HOST || window.location.host;
@@ -333,12 +370,17 @@ export default {
       );
     },
     backdoor() {
+      this.backDice = this.dice.map((x) => x);
+      this.backdoorDialog = true;
+    },
+    setBackDice() {
       this.ws.send(
         JSON.stringify({
           command: "backdoor",
-          data: [1, 2, 3, 4, 5],
+          data: this.backDice,
         })
       );
+      this.backdoorDialog = false;
     },
     open() {
       console.log("open");
