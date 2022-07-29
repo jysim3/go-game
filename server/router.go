@@ -86,11 +86,16 @@ func NewRouter() *gin.Engine {
 	r.GET("/joker/:name/ws", joker.WebSocket)
 	r.POST("/joker/:name/reset", joker.Reset)
 
+	pyramid := controllers.NewWebSocketController(controllers.NewPyramidController())
+	r.GET("/pyramid/:name/ws", pyramid.WebSocket)
+	r.POST("/pyramid/:name/reset", pyramid.Reset)
+
 	r.GET("/summary", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"dice":  other.Summary(),
-			"rock":  rock.Summary(),
-			"joker": joker.Summary(),
+			"dice":    other.Summary(),
+			"rock":    rock.Summary(),
+			"joker":   joker.Summary(),
+			"pyramid": pyramid.Summary(),
 		})
 	})
 	return r
