@@ -1,5 +1,13 @@
 package controllers
 
+// TODO: refreshing does not reveal current card - done
+// TODO: option for additional cards
+// TODO: current stage when deciding
+// TODO: outcome of decide
+// TODO: divider not aligned
+// TODO: voting for reveal
+// TODO: backdoor
+
 import (
 	"encoding/json"
 	"fmt"
@@ -55,8 +63,9 @@ func (h PyramidController) reset() {
 
 func (h PyramidController) handleConnect(s *melody.Session) {
 	sessionId, exists := s.Get("sessionId")
-	if !exists {
+	if !exists || sessionId == nil {
 		s.CloseWithMsg(melody.FormatCloseMessage( /* CloseUnsupportedData= */ 1003, "Refresh to get an id"))
+		return
 	}
 	if player, exists := h.playerData[sessionId.(string)]; exists {
 		player.session = s
@@ -80,10 +89,8 @@ func (h PyramidController) handleConnect(s *melody.Session) {
 		s.Write(r)
 	}
 	h.playerData[sessionId.(string)].updateState()
-	if h.gameData.Round > 0 {
-		h.updateGame()
-	}
 	h.updateNames()
+	h.updateGame(false)
 }
 
 func (h PyramidController) handleDisconnect(s *melody.Session) {
@@ -100,7 +107,10 @@ func (h PyramidController) updateNames() {
 	h.m.Broadcast(r)
 }
 
-func (h PyramidController) updateGame() {
+func (h PyramidController) updateGame(forced bool) {
+	if !forced && h.gameData.Round <= 0 {
+		return
+	}
 	var target *Target
 	if h.gameData.Target != nil {
 		new_target := *h.gameData.Target
@@ -142,7 +152,7 @@ func (h *PyramidController) restartGame() {
 	}
 	h.gameData.Cards = h.cards.DealCards(10)
 	h.gameData.Round = 0
-	h.updateGame()
+	h.updateGame( /* forced */ true)
 }
 
 func (h PyramidController) setName(id string, name string) {
@@ -176,7 +186,7 @@ func (h PyramidController) sendCard(id string, d interface{}) {
 				}
 				fmt.Println(target)
 				h.gameData.Target = target
-				h.updateGame()
+				h.updateGame(false)
 			}
 		}
 	}
@@ -198,17 +208,17 @@ func (h PyramidController) handleMessage(s *melody.Session, msg []byte) {
 		h.setName(id, command.Data.(string))
 	} else if command.Code == "open" {
 		h.gameData.Round += 1
-		h.updateGame()
+		h.updateGame(false)
 	} else if command.Code == "send" {
 		h.sendCard(id, command.Data)
 	} else if command.Code == "accept" {
 		fmt.Println(h.gameData.Target)
 		h.gameData.Target.revealed = true
-		h.updateGame()
+		h.updateGame(false)
 		h.gameData.Target = nil
 	} else if command.Code == "reject" {
 		h.gameData.Target = nil
-		h.updateGame()
+		h.updateGame(false)
 	} else if command.Code == "backdoor" {
 	}
 }

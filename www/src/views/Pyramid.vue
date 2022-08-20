@@ -3,15 +3,37 @@
     <v-container>
       <v-dialog v-model="targetedDialog" width="500" :persistent="targeted">
         <v-card>
-          <v-card-title color="danger"
-            >{{ playerNames[targetFrom] }} sent
-            {{ targetTo === sessionId ? "you" : playerNames[targetTo] }} a
-            card!</v-card-title
-          >
+          <v-card-title color="danger">
+            <v-list-item three-line>
+              <v-list-item-content>
+                <div class="text-overline mb-4">TARGET</div>
+                <v-list-item-title class="text-h5 mb-1">
+                  {{
+                    targetFrom === sessionId ? "You" : playerNames[targetFrom]
+                  }}
+                  sent
+                  {{ targetTo === sessionId ? "you" : playerNames[targetTo] }} a
+                  card!
+                </v-list-item-title>
+                <v-list-item-subtitle v-if="targetCard">
+                  {{
+                    targetTo === sessionId ? "you" : playerNames[targetTo]
+                  }}
+                  opened the card!
+                </v-list-item-subtitle>
+                <v-list-item-subtitle v-else-if="!targeted">
+                  {{
+                    targetTo === sessionId ? "you" : playerNames[targetTo]
+                  }}
+                  rejected the card!
+                </v-list-item-subtitle>
+              </v-list-item-content>
+            </v-list-item>
+          </v-card-title>
           <v-card-text>
             <v-row>
               <v-col>
-                <Card v-bind="gameCards(round)" />
+                <Card v-bind="gameCards(round - 1)" />
               </v-col>
               <v-col>
                 <Card v-bind="targetOpenCard" />
@@ -178,7 +200,11 @@
                 <div class="caption">Players</div>
                 <div>
                   <strong class="text-uppercase text--lighten-1">
-                    {{ status === STATUS.DISCONNECTED? "Not Connected" : Object.keys(playerNames).length }}
+                    {{
+                      status === STATUS.DISCONNECTED
+                        ? "Not Connected"
+                        : Object.keys(playerNames).length
+                    }}
                   </strong>
                 </div>
               </div>
@@ -203,8 +229,7 @@
         <v-col cols="3" sm="auto">
           <Card v-bind="gameCards(6)" />
         </v-col>
-        <v-col cols="3" sm="auto"> <Card v-bind="gameCards(5)" />
-        </v-col>
+        <v-col cols="3" sm="auto"> <Card v-bind="gameCards(5)" /> </v-col>
         <v-col cols="3" sm="auto">
           <Card v-bind="gameCards(4)" />
         </v-col>
@@ -334,6 +359,7 @@ export default {
   methods: {
     gameCards(index) {
       var self = this;
+      index += 1;
       if (index === this.round) {
         return this.currentRoundCards;
       } else if (index > this.round) {
@@ -366,7 +392,7 @@ export default {
         console.log(j);
         switch (j.command) {
           case "setName":
-            self.name = j.data
+            self.name = j.data;
             self.nameDialog = true;
             break;
           case "game":
@@ -374,8 +400,6 @@ export default {
             self.currentRoundCards = j.data.currentCard;
 
             if (j.data.target) {
-              console.log(self.targetedDialog);
-
               self.targetFrom = j.data.target.from;
               self.targetTo = j.data.target.to;
 
