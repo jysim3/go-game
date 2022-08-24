@@ -34,10 +34,12 @@ type Player struct {
 }
 
 type PyramidGame struct {
-	Cards     []models.Card
-	UsedCards []models.Card
-	Round     int
-	Target    *Target
+	Cards        []models.Card
+	UsedCards    []models.Card
+	Round        int
+	Target       *Target
+	PlayerCardsN int
+	DeckN        int
 }
 
 type Target struct {
@@ -77,8 +79,8 @@ func (h PyramidController) handleConnect(s *melody.Session) {
 		s.Write(r)
 	} else {
 		player := Player{session: s, Id: sessionId.(string)}
-		if h.gameData.Round > 0 {
-			player.Cards = h.cards.DealCards(3)
+		if len(h.gameData.Cards) != 0 {
+			player.Cards = h.cards.DealCards(h.gameData.PlayerCardsN)
 		}
 		h.playerData[sessionId.(string)] = &player
 		ret := models.Command{
@@ -88,9 +90,10 @@ func (h PyramidController) handleConnect(s *melody.Session) {
 		r, _ := json.Marshal(ret)
 		s.Write(r)
 	}
+
 	h.playerData[sessionId.(string)].updateState()
 	h.updateNames()
-	h.updateGame(false)
+	h.updateGame()
 }
 
 func (h PyramidController) handleDisconnect(s *melody.Session) {
@@ -107,8 +110,9 @@ func (h PyramidController) updateNames() {
 	h.m.Broadcast(r)
 }
 
-func (h PyramidController) updateGame(forced bool) {
-	if !forced && h.gameData.Round <= 0 {
+func (h PyramidController) updateGame() {
+	log.Println(h.cards)
+	if len(h.gameData.Cards) == 0 {
 		return
 	}
 	var target *Target
@@ -142,17 +146,28 @@ func (h PyramidController) GetNames() map[string]string {
 	return names
 }
 
-func (h *PyramidController) restartGame() {
-	// h.gameData = &PyramidGame{}
+func (h *PyramidController) restartGame(d interface{}) {
+	r, _ := json.Marshal(d)
+	var payload struct {
+		PlayerCardsN int `json:"nCards"`
+		DeckN        int `json:"nDeck"`
+	}
+	if err := json.Unmarshal(r, &payload); err == nil {
+		h.gameData.PlayerCardsN = payload.PlayerCardsN
+		h.gameData.DeckN = payload.DeckN
+	} else {
+		h.gameData.PlayerCardsN = 3
+		h.gameData.DeckN = 1
+	}
 
-	h.cards.RefreshDeck( /* useDiscarded= */ false)
+	h.cards.NewDeck(h.gameData.DeckN)
 	for _, player := range h.playerData {
-		player.Cards = h.cards.DealCards(3)
+		player.Cards = h.cards.DealCards(h.gameData.PlayerCardsN)
 		player.updateState()
 	}
 	h.gameData.Cards = h.cards.DealCards(10)
 	h.gameData.Round = 0
-	h.updateGame( /* forced */ true)
+	h.updateGame()
 }
 
 func (h PyramidController) setName(id string, name string) {
@@ -186,7 +201,7 @@ func (h PyramidController) sendCard(id string, d interface{}) {
 				}
 				fmt.Println(target)
 				h.gameData.Target = target
-				h.updateGame(false)
+				h.updateGame()
 			}
 		}
 	}
@@ -201,24 +216,24 @@ func (h PyramidController) handleMessage(s *melody.Session, msg []byte) {
 		return
 	}
 	if command.Code == "reset" {
-		h.reset()
+		// h.reset()
 	} else if command.Code == "start" {
-		h.restartGame()
+		h.restartGame(command.Data)
 	} else if command.Code == "setName" {
 		h.setName(id, command.Data.(string))
 	} else if command.Code == "open" {
 		h.gameData.Round += 1
-		h.updateGame(false)
+		h.updateGame()
 	} else if command.Code == "send" {
 		h.sendCard(id, command.Data)
 	} else if command.Code == "accept" {
 		fmt.Println(h.gameData.Target)
 		h.gameData.Target.revealed = true
-		h.updateGame(false)
+		h.updateGame()
 		h.gameData.Target = nil
 	} else if command.Code == "reject" {
 		h.gameData.Target = nil
-		h.updateGame(false)
+		h.updateGame()
 	} else if command.Code == "backdoor" {
 	}
 }

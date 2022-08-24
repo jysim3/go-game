@@ -76,6 +76,7 @@ func NewRouter() *gin.Engine {
 
 	other := controllers.NewWebSocketController(controllers.NewDiceController())
 	r.GET("/dice/:name/ws", other.WebSocket)
+	r.GET("/dice/:name/reset", other.Reset)
 
 	rock := controllers.NewWebSocketController(controllers.NewRockController())
 	r.GET("/rock/:name/ws", rock.WebSocket)

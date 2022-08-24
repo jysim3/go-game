@@ -30,11 +30,13 @@ func (c *CardsDeck) Deal() Card {
 	return card
 }
 
-func (c *CardsDeck) RefreshDeck(useDiscarded bool) {
-	if useDiscarded {
-	} else {
-		c.cards = make([]Card, 4*13)
-		i := 0
+func (c *CardsDeck) NewDeck(nDeck int) bool {
+	if nDeck < 1 {
+		return false
+	}
+	c.cards = make([]Card, 4*13*nDeck)
+	i := 0
+	for Deck := 0; Deck < nDeck; Deck++ {
 		for Suit := 0; Suit < 4; Suit++ {
 			for Number := 1; Number < 14; Number++ {
 				c.cards[i] = Card{Suit: Suit, Number: Number}
@@ -42,4 +44,8 @@ func (c *CardsDeck) RefreshDeck(useDiscarded bool) {
 			}
 		}
 	}
+	return true
+}
+
+func (c *CardsDeck) RefreshDeck() {
 }

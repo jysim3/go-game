@@ -16,15 +16,11 @@
                   card!
                 </v-list-item-title>
                 <v-list-item-subtitle v-if="targetCard">
-                  {{
-                    targetTo === sessionId ? "you" : playerNames[targetTo]
-                  }}
+                  {{ targetTo === sessionId ? "you" : playerNames[targetTo] }}
                   opened the card!
                 </v-list-item-subtitle>
                 <v-list-item-subtitle v-else-if="!targeted">
-                  {{
-                    targetTo === sessionId ? "you" : playerNames[targetTo]
-                  }}
+                  {{ targetTo === sessionId ? "you" : playerNames[targetTo] }}
                   rejected the card!
                 </v-list-item-subtitle>
               </v-list-item-content>
@@ -212,77 +208,117 @@
           </v-card>
         </v-col>
       </v-row>
-      <v-row justify="center">
-        <v-col cols="3" sm="auto">
-          <Card v-bind="gameCards(9)" />
-        </v-col>
-      </v-row>
-      <v-row justify="center" class="mt-n12">
-        <v-col cols="3" sm="auto">
-          <Card v-bind="gameCards(8)" />
-        </v-col>
-        <v-col cols="3" sm="auto">
-          <Card v-bind="gameCards(7)" />
-        </v-col>
-      </v-row>
-      <v-row justify="center" class="mt-n12">
-        <v-col cols="3" sm="auto">
-          <Card v-bind="gameCards(6)" />
-        </v-col>
-        <v-col cols="3" sm="auto"> <Card v-bind="gameCards(5)" /> </v-col>
-        <v-col cols="3" sm="auto">
-          <Card v-bind="gameCards(4)" />
-        </v-col>
-      </v-row>
-      <v-row justify="center" class="mt-n12">
-        <v-col cols="3" sm="auto">
-          <Card v-bind="gameCards(3)" />
-        </v-col>
-        <v-col cols="3" sm="auto">
-          <Card v-bind="gameCards(2)" />
-        </v-col>
-        <v-col cols="3" sm="auto"> <Card v-bind="gameCards(1)" /> </v-col
-        ><v-col cols="3" sm="auto">
-          <Card v-bind="gameCards(0)" />
-        </v-col>
-      </v-row>
-      <v-divider class="mb-4" />
-      <v-divider />
-      <v-row justify="center" class="mt-4">
-        <v-col cols="3" sm="auto" v-for="(card, index) in cards" :key="index">
-          <Card
-            :suit="card.suit"
-            :number="card.number"
-            :onClick="
-              () => {
-                sendDialog = true;
-                sendCard = card;
-              }
-            "
-          />
-        </v-col>
-      </v-row>
-      <v-row justify="center">
-        <v-col cols="12" v-if="status === STATUS.DISCONNECTED">
+      <v-row justify="center" v-if="status === STATUS.DISCONNECTED">
+        <v-col cols="12">
           <v-btn color="success" block @click.stop="connect">Reconnect</v-btn>
         </v-col>
-        <v-col cols="12" v-else-if="round === -1">
-          <v-btn color="success" block @click.stop="start">start</v-btn>
+      </v-row>
+      <v-row justify="center" v-else-if="round === -1">
+        <v-col cols="12" md="6">
+          <v-card>
+            <v-card-title> Create a new game </v-card-title>
+            <v-card-text>
+              <v-slider
+                thumb-label="always"
+                label="Cards per player"
+                v-model.number="nCards"
+                min="1"
+                max="12"
+                single-line
+                type="number"
+              />
+              <v-slider
+                min="1"
+                max="5"
+                thumb-label="always"
+                label="Deck of Cards in total"
+                v-model.number="nDeck"
+                single-line
+                type="number"
+              />
+            </v-card-text>
+            <v-card-actions>
+              <v-btn color="success" block @click.stop="start">start</v-btn>
+            </v-card-actions>
+          </v-card>
         </v-col>
       </v-row>
+      <div v-else>
+        <v-row justify="center">
+          <v-col cols="3" sm="auto">
+            <Card v-bind="gameCards(9)" />
+          </v-col>
+        </v-row>
+        <v-row justify="center" class="mt-n12" v-if="round < 9">
+          <v-col cols="3" sm="auto">
+            <Card v-bind="gameCards(8)" />
+          </v-col>
+          <v-col cols="3" sm="auto">
+            <Card v-bind="gameCards(7)" />
+          </v-col>
+        </v-row>
+        <v-row justify="center" class="mt-n12" v-if="round < 7">
+          <v-col cols="3" sm="auto">
+            <Card v-bind="gameCards(6)" />
+          </v-col>
+          <v-col cols="3" sm="auto"> <Card v-bind="gameCards(5)" /> </v-col>
+          <v-col cols="3" sm="auto">
+            <Card v-bind="gameCards(4)" />
+          </v-col>
+        </v-row>
+        <v-row justify="center" class="mt-n12" v-if="round < 4">
+          <v-col cols="3" sm="auto">
+            <Card v-bind="gameCards(3)" />
+          </v-col>
+          <v-col cols="3" sm="auto">
+            <Card v-bind="gameCards(2)" />
+          </v-col>
+          <v-col cols="3" sm="auto"> <Card v-bind="gameCards(1)" /> </v-col
+          ><v-col cols="3" sm="auto">
+            <Card v-bind="gameCards(0)" />
+          </v-col>
+        </v-row>
+        <v-row justify="center" v-if="round==0">
+          <v-list-item three-line>
+            <v-list-item-content>
+              <v-list-item-title class="mb-1 text-center">
+                Reveal a card by tapping the bottom right card to get started
+              </v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+        </v-row>
+        <div class="mb-4" />
+        <v-row justify="center" class="mt-4">
+          <v-card>
+            <v-card-title> Your cards </v-card-title>
+            <v-card-text>
+              <v-row>
+                <v-col
+                  cols="3"
+                  sm="auto"
+                  v-for="(card, index) in cards"
+                  :key="index"
+                >
+                  <Card
+                    :suit="card.suit"
+                    :number="card.number"
+                    :onClick="
+                      () => {
+                        sendDialog = true;
+                        sendCard = card;
+                      }
+                    "
+                  />
+                </v-col>
+              </v-row>
+            </v-card-text>
+          </v-card>
+        </v-row>
+      </div>
       <v-btn fab @click.stop="backdoor" small absolute text right />
       <div style="position: absolute; bottom: 0">
-        <v-btn
-          small
-          text
-          @click="
-            action = reset;
-            dialog = true;
-          "
-          >Reset</v-btn
-        >
+        <v-btn small text @click="reset">Reset</v-btn>
         <v-btn small text @click="nameDialog = true">Rename</v-btn>
-        <v-btn small text @click.stop="start">Restart</v-btn>
       </div>
     </v-container>
   </div>
@@ -325,6 +361,9 @@ export default {
 
       selectedPlayer: null,
       playerNames: {},
+
+      nDeck: 1,
+      nCards: 3,
 
       targeted: false,
       targetedDialog: false,
@@ -508,7 +547,7 @@ export default {
       this.ws.send(
         JSON.stringify({
           command: "start",
-          data: "",
+          data: { nCards: this.nCards, nDeck: this.nDeck },
         })
       );
     },
