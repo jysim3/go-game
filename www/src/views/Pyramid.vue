@@ -249,7 +249,7 @@
             <Card v-bind="gameCards(9)" />
           </v-col>
         </v-row>
-        <v-row justify="center" class="mt-n12" v-if="round < 9">
+        <v-row justify="center" class="mt-n12" v-if="round <= 9">
           <v-col cols="3" sm="auto">
             <Card v-bind="gameCards(8)" />
           </v-col>
@@ -257,7 +257,7 @@
             <Card v-bind="gameCards(7)" />
           </v-col>
         </v-row>
-        <v-row justify="center" class="mt-n12" v-if="round < 7">
+        <v-row justify="center" class="mt-n12" v-if="round <= 7">
           <v-col cols="3" sm="auto">
             <Card v-bind="gameCards(6)" />
           </v-col>
@@ -266,7 +266,7 @@
             <Card v-bind="gameCards(4)" />
           </v-col>
         </v-row>
-        <v-row justify="center" class="mt-n12" v-if="round < 4">
+        <v-row justify="center" class="mt-n12" v-if="round <= 4">
           <v-col cols="3" sm="auto">
             <Card v-bind="gameCards(3)" />
           </v-col>
